@@ -1,0 +1,73 @@
+// Copyright Rivtower Technologies LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "common.proto";
+
+package crypto;
+
+message GetCryptoInfoResponse {
+    common.StatusCode status = 1;
+    string name = 2;
+    uint32 hash_len = 3;
+    uint32 signature_len = 4;
+    uint32 address_len = 5;
+}
+
+message HashDataRequest {
+    bytes data = 1;
+}
+
+message VerifyDataHashRequest {
+    bytes data = 1;
+    bytes hash = 2;
+}
+
+message SignMessageRequest {
+    bytes msg = 2;
+}
+
+message SignMessageResponse {
+    common.StatusCode status = 1;
+    bytes signature = 2;
+}
+
+message RecoverSignatureRequest {
+    bytes msg = 1;
+    bytes signature = 2;
+}
+
+message RecoverSignatureResponse {
+    common.StatusCode status = 1;
+    bytes address = 2;
+}
+
+service CryptoService {
+    // Get crypto info
+    rpc GetCryptoInfo(common.Empty) returns (GetCryptoInfoResponse);
+
+    // Hash data
+    rpc HashData(HashDataRequest) returns (common.HashResponse);
+
+    // Verify hash of data
+    rpc VerifyDataHash(VerifyDataHashRequest) returns (common.StatusCode);
+
+    // Sign a message
+    rpc SignMessage(SignMessageRequest) returns (SignMessageResponse);
+
+    // Recover signature
+    rpc RecoverSignature(RecoverSignatureRequest) returns (RecoverSignatureResponse);
+
+}

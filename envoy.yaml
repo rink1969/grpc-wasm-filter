@@ -1,0 +1,60 @@
+static_resources:
+  listeners:
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8000
+    filter_chains:
+      - filters:
+          - name: envoy.filters.network.http_connection_manager
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+              stat_prefix: ingress_http
+              codec_type: AUTO
+              route_config:
+                name: local_routes
+                virtual_hosts:
+                  - name: local_service
+                    domains:
+                      - "*"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          cluster: crypto
+              http_filters:
+                - name: envoy.filters.http.wasm
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                    config:
+                      name: "my_plugin"
+                      root_id: "my_root_id"
+                      # if your wasm filter requires custom configuration you can add
+                      # as follows
+                      configuration:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: "446d5be0d3ea6c47072370a89412338618ad5ff3"
+                      vm_config:
+                        runtime: "envoy.wasm.runtime.v8"
+                        vm_id: "my_vm_id"
+                        code:
+                          local:
+                            filename: "/etc/envoy/proxy-wasm-plugins/grpc_filter.wasm"
+                - name: envoy.filters.http.router
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  clusters:
+    - name: crypto
+      type: strict_dns
+      lb_policy: round_robin
+      # This is needed as our local gRPC server doesn't support HTTP2 protocol
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: crypto
+        endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: crypto
+                  port_value: 50005

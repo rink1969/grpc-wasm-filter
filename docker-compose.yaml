@@ -1,0 +1,30 @@
+version: '3.7'
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.24-latest
+    hostname: envoy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+      - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
+    networks:
+      - envoymesh
+  crypto:
+    image: registry.devops.rivtower.com/cita-cloud/crypto_sm:v6.6.5
+    ports:
+      - "50005:50005"
+    volumes:
+      - ./config.toml:/etc/cita-cloud/config/config.toml
+      - ./private_key:/mnt/private_key
+    command:
+      - crypto
+      - run
+      - -c
+      - /etc/cita-cloud/config/config.toml
+      - -p
+      - /mnt/private_key
+    networks:
+      - envoymesh
+networks:
+  envoymesh: {}
