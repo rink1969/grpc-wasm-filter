@@ -43,6 +43,7 @@ impl RootContext for HttpBodyRoot {
     fn create_http_context(&self, _: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(HttpBody {
             config: self.config.clone(),
+            current_path: String::new(),
         }))
     }
 
@@ -62,6 +63,7 @@ impl RootContext for HttpBodyRoot {
 
 struct HttpBody {
     config: String,
+    current_path: String,
 }
 
 impl Context for HttpBody {}
@@ -73,10 +75,16 @@ impl HttpContext for HttpBody {
         for h in headers {
             info!("{}: {}", h.0, h.1);
         }
+        if let Some(path) = self.get_http_request_header(":path") {
+            self.current_path = path;
+        }
         Action::Continue
     }
     fn on_http_request_body(&mut self, body_size: usize, _end_of_stream: bool) -> Action {
         info!("on_http_request_body");
+        if self.current_path != "/crypto.CryptoService/HashData" {
+            return Action::Continue;
+        }
         if let Some(body) = self.get_http_request_body(0, body_size) {
             info!("body: {:?}", body);
             if let Ok(req) = HashDataRequest::decode(&body[5..]) {
